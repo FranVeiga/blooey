@@ -1,7 +1,8 @@
 mod actions;
 mod app;
-mod component;
+mod components;
 mod events;
+mod layouts;
 mod tui;
 use anyhow::Result;
 

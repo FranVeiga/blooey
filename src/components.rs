@@ -1,8 +1,11 @@
 use crate::actions::Action;
 use crate::events::Event;
+use crate::layouts::LayoutManager;
 use anyhow::Result;
-use ratatui::prelude::Rect;
 use ratatui::Frame;
+
+pub mod select_list;
+pub mod test_component;
 
 pub trait Component {
     fn init(&self) -> Result<()> {
@@ -11,14 +14,13 @@ pub trait Component {
     fn handle_events(&self, e: Event) -> Action {
         match e {
             Event::Quit => Action::Quit,
+            _ => Action::Noop,
         }
     }
 
-    #[allow(unused_variables)]
-    fn update(&self, action: Action) -> Action {
+    fn update(&mut self, action: &Action) -> Action {
         Action::Noop
     }
 
-    #[allow(unused_variables)]
-    fn render(&self, f: Frame<'_>, rect: Rect) -> Result<()>;
+    fn render(&self, f: &mut Frame<'_>, layout_manager: &LayoutManager) -> Result<()>;
 }
