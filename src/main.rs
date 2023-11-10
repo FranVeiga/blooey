@@ -1,5 +1,6 @@
 mod actions;
 mod app;
+mod bluetooth;
 mod components;
 mod events;
 mod layouts;
@@ -8,8 +9,9 @@ use anyhow::Result;
 
 use app::App;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let mut app = App::new();
-    app.run()?;
+    app.run().await?;
     Ok(())
 }

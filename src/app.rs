@@ -1,3 +1,4 @@
+use crate::bluetooth::BluetoothManager;
 use crate::components::test_component::TestComponent;
 use crate::events::{Event, EventHandler};
 use crate::layouts::LayoutManager;
@@ -24,14 +25,14 @@ impl App {
             components: Vec::new(),
             should_quit: false,
             actions_pending: VecDeque::new(),
-            tick_rate: 10,
+            tick_rate: 12,
             event_rx: None,
             tui: Tui::new(),
             layout_manager: LayoutManager::new(),
         }
     }
 
-    pub fn run(&mut self) -> Result<()> {
+    pub async fn run(&mut self) -> Result<()> {
         let (event_tx, event_rx): (Sender<Event>, Receiver<Event>) = mpsc::channel();
         self.event_rx = Some(event_rx);
 
@@ -42,7 +43,7 @@ impl App {
         });
         self.tui.enter()?;
 
-        self.add_initial_components()?;
+        self.add_initial_components().await?;
 
         for c in self.components.iter_mut() {
             c.init()?;
@@ -78,13 +79,8 @@ impl App {
         Ok(())
     }
 
-    fn add_initial_components(&mut self) -> Result<()> {
-        self.components.push(Box::new(SelectList::new(vec![
-            "Hola".into(),
-            "Que".into(),
-            "Tal".into(),
-            "Testing".into(),
-        ])));
+    async fn add_initial_components(&mut self) -> Result<()> {
+        self.components.push(Box::new(SelectList::new().await?));
         self.components.push(Box::new(TestComponent::new()));
         Ok(())
     }

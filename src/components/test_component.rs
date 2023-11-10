@@ -16,7 +16,13 @@ impl TestComponent {
     pub fn new() -> TestComponent {
         TestComponent {
             color: Color::DarkGray,
-            colors: vec![Color::DarkGray, Color::Red, Color::Blue],
+            colors: vec![
+                Color::DarkGray,
+                Color::Red,
+                Color::Blue,
+                Color::Green,
+                Color::Yellow,
+            ],
         }
     }
 }
@@ -45,7 +51,7 @@ impl Component for TestComponent {
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .subsec_millis()
-                    % 3;
+                    % self.colors.len() as u32;
                 self.color = self.colors.get(i as usize).expect("").clone();
                 Action::Noop
             }

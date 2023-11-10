@@ -1,29 +1,32 @@
-use crate::layouts::LayoutManager;
-
 use super::{Action, Component};
+use crate::bluetooth::{BluetoothManager, DeviceListItem};
+use crate::layouts::LayoutManager;
 use anyhow::Result;
-use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::prelude::Rect;
-use ratatui::style::Stylize;
+use ratatui::prelude::Alignment;
+use ratatui::style::{Color, Stylize};
 use ratatui::text::Line;
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::Frame;
 
 pub struct SelectList {
-    contents: Vec<String>,
+    bluetooth_manager: BluetoothManager,
+    devices: Vec<DeviceListItem>,
     selected_index: usize,
 }
 
 impl SelectList {
-    pub fn new(contents: Vec<String>) -> SelectList {
-        SelectList {
-            contents,
+    pub async fn new() -> Result<SelectList> {
+        let bluetooth_manager = BluetoothManager::create().await?;
+        let contents = bluetooth_manager.discovered_devices_list().await?;
+        Ok(SelectList {
+            devices: contents,
             selected_index: 0,
-        }
+            bluetooth_manager,
+        })
     }
 
     pub fn increment_index(&mut self) {
-        let new_index = (self.contents.len() - 1).min(self.selected_index + 1);
+        let new_index = (self.devices.len() - 1).min(self.selected_index + 1);
         self.selected_index = new_index
     }
 
@@ -36,18 +39,27 @@ impl SelectList {
 impl Component for SelectList {
     fn render(&self, f: &mut Frame<'_>, layout_manager: &LayoutManager) -> Result<()> {
         let rect = layout_manager.get_main_list_rect(f.size());
-        let mut lines: Vec<Line> = Vec::new();
-        for i in 0..self.contents.len() {
+        let block = Block::default().borders(Borders::ALL).title(
+            ratatui::widgets::block::Title::from("Bluetooth devices").alignment(Alignment::Left),
+        );
+        let mut items: Vec<Line> = Vec::new();
+        for i in 0..self.devices.len() {
+            let color = if self.devices[i].is_connected {
+                Color::Green
+            } else {
+                Color::White
+            };
+            let device_name = self.devices[i].name.clone().fg(color);
             if i == self.selected_index {
-                lines.push(Line::from(vec![
-                    "> ".white().bold().into(),
-                    self.contents[i].clone().white().bold().into(),
+                items.push(Line::from(vec![
+                    "> ".bold().into(),
+                    device_name.bold().into(),
                 ]))
             } else {
-                lines.push(self.contents[i].clone().white().into())
+                items.push(device_name.into())
             }
         }
-        f.render_widget(Paragraph::new(lines), rect);
+        f.render_widget(Paragraph::new(items).block(block), rect);
 
         Ok(())
     }
