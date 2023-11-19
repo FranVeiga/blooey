@@ -4,6 +4,7 @@ use crate::layouts::LayoutManager;
 use anyhow::Result;
 use ratatui::Frame;
 
+pub mod alert;
 pub mod select_list;
 pub mod test_component;
 

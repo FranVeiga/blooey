@@ -1,6 +1,7 @@
 use crossterm::event::Event as CrosstermEvent;
 use crossterm::event::{self, KeyCode, KeyEvent};
 use std::sync::mpsc::Sender;
+use std::time::Instant;
 
 pub enum Event {
     Quit,
@@ -8,26 +9,41 @@ pub enum Event {
     ChangeColor,
     Down,
     Up,
+    Tick,
+    ConnectDevice,
+    DisconnectDevice,
 }
 
 pub struct EventHandler {
-    poll_timeout: std::time::Duration,
+    tick_rate: u64,
     should_quit: bool,
     pub event_tx: Sender<Event>,
+    prev_tick: Instant,
 }
 
 impl EventHandler {
-    pub fn new(event_tx: Sender<Event>) -> EventHandler {
+    pub fn new(event_tx: Sender<Event>, tick_rate: u64) -> EventHandler {
         EventHandler {
-            poll_timeout: std::time::Duration::from_millis(16),
             should_quit: false,
+            tick_rate,
             event_tx,
+            prev_tick: Instant::now(),
         }
     }
 
-    pub fn start_event_polling(&mut self) {
-        loop {
-            if event::poll(self.poll_timeout).unwrap_or(false) {
+    pub fn start_event_polling(mut self) {
+        std::thread::spawn(move || loop {
+            let t = Instant::now();
+            let last_tick = Instant::now();
+            self.event_tx
+                .send(Event::Render)
+                .unwrap_or_else(|e| eprintln!("Failed to send event: {}", e));
+            let timeout = std::time::Duration::from_millis(self.tick_rate)
+                .saturating_sub(last_tick.elapsed());
+
+            self.prev_tick = t;
+
+            if event::poll(timeout).unwrap_or(false) {
                 if let Ok(e) = event::read() {
                     match self.handle_crossterm_event(e) {
                         Some(event) => self
@@ -37,12 +53,14 @@ impl EventHandler {
                         None => (),
                     }
                 }
-            } else {
+            }
+
+            if last_tick.elapsed() >= std::time::Duration::from_millis(self.tick_rate) {
                 self.event_tx
-                    .send(Event::Render)
+                    .send(Event::Tick)
                     .unwrap_or_else(|e| eprintln!("Failed to send event: {}", e));
-            };
-        }
+            }
+        });
     }
 
     pub fn handle_crossterm_event(&mut self, e: CrosstermEvent) -> Option<Event> {
@@ -56,9 +74,11 @@ impl EventHandler {
         match e.code {
             KeyCode::Char('q') => self.quit(),
             KeyCode::Char('Q') => self.quit(),
-            KeyCode::Char('c') => Some(Event::ChangeColor),
+            KeyCode::Char('r') => Some(Event::ChangeColor),
             KeyCode::Char('j') => Some(Event::Down),
             KeyCode::Char('k') => Some(Event::Up),
+            KeyCode::Char('c') => Some(Event::ConnectDevice),
+            KeyCode::Char('d') => Some(Event::DisconnectDevice),
             _ => None,
         }
     }

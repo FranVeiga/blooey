@@ -19,4 +19,17 @@ impl LayoutManager {
     pub fn get_cheat_rect(&self, framesize: Rect) -> Rect {
         self.home_layout.split(framesize)[1]
     }
+
+    pub fn get_alert_layout(&self, framesize: Rect) -> Rect {
+        let width = 20;
+        let height = 5;
+        let x = framesize.width / 2 - width / 2;
+        let y = framesize.height / 2 - height / 2;
+        Rect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
 }

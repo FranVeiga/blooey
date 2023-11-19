@@ -25,14 +25,22 @@ impl SelectList {
         })
     }
 
-    pub fn increment_index(&mut self) {
+    fn increment_index(&mut self) {
         let new_index = (self.devices.len() - 1).min(self.selected_index + 1);
         self.selected_index = new_index
     }
 
-    pub fn decrement_index(&mut self) {
+    fn decrement_index(&mut self) {
         let new_index = 0.max(self.selected_index as i64 - 1);
         self.selected_index = new_index as usize
+    }
+
+    fn update_device_list(&mut self) -> Result<()> {
+        // for item in self.devices.iter() {
+        //     let device = self.bluetooth_manager.get_device(item)?;
+        // }
+
+        Ok(())
     }
 }
 
@@ -74,6 +82,22 @@ impl Component for SelectList {
                 self.increment_index();
                 Action::Noop
             }
+            Action::SelectDeviceForConnection => {
+                let device = self
+                    .devices
+                    .get(self.selected_index)
+                    .expect("Should only select available items");
+                Action::Connect(device.clone())
+            }
+            Action::SelectDeviceForDisconnection => {
+                let device = self
+                    .devices
+                    .get(self.selected_index)
+                    .expect("Should only select available items");
+                Action::Disconnect(device.clone())
+            }
+            Action::UpdateDeviceList => self.update_device_list(),
+
             _ => Action::Noop,
         }
     }
