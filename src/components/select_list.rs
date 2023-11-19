@@ -38,8 +38,6 @@ impl SelectList {
     fn update_device_list(&mut self) -> Result<()> {
         // for item in self.devices.iter() {
         //     let device = self.bluetooth_manager.get_device(item)?;
-        // }
-
         Ok(())
     }
 }
@@ -96,8 +94,7 @@ impl Component for SelectList {
                     .expect("Should only select available items");
                 Action::Disconnect(device.clone())
             }
-            Action::UpdateDeviceList => self.update_device_list(),
-
+            // Action::UpdateDeviceList => self.update_device_list(),
             _ => Action::Noop,
         }
     }
